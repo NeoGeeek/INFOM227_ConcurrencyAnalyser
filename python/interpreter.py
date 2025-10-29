@@ -566,7 +566,7 @@ class Interpreter:
             right = self._evaluate_expression(expression.right, environment)
             op = expression.operator
             if op in {"+", "-", "*", "/"}:
-                if not isinstance(left, int) or not isinstance(right, int):
+                if type(left) is not int or type(right) is not int: 
                     raise InterpreterError(f"Operator '{op}' expects integers")
                 if op == "+":
                     return left + right
@@ -578,7 +578,7 @@ class Interpreter:
                     raise InterpreterError("Division by zero")
                 return int(left / right)
             if op in {"and", "or"}:
-                if not isinstance(left, bool) or not isinstance(right, bool):
+                if type(left) is not bool or type(right) is not bool: 
                     raise InterpreterError(f"Operator '{op}' expects booleans")
                 return (left and right) if op == "and" else (left or right)
             if op in {"==", "!="}:
@@ -586,7 +586,7 @@ class Interpreter:
                     raise InterpreterError("Cannot compare values of different types")
                 return (left == right) if op == "==" else (left != right)
             if op in {"<", ">", "<=", ">="}:
-                if not isinstance(left, int) or not isinstance(right, int):
+                if type(left) is not int or type(right) is not int:
                     raise InterpreterError(f"Operator '{op}' expects integers")
                 if op == "<":
                     return left < right
