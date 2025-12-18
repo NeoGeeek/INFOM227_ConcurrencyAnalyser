@@ -1,9 +1,9 @@
-fn_1(int x) = {
+fn_1(x) = {
     x = x + 1;
     return x;
 }
 
-fn_2(int x) = {
+fn_2(x) = {
     y = spawn {
         fn_1(x);
     }
