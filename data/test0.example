@@ -1,24 +1,24 @@
-fn_1(x) = {
+function fn_1(x) {
     x = x + 1;
     return x;
 }
 
-fn_2(x) = {
+function fn_2(x) {
     y = spawn {
         fn_1(x);
-    }
+    };
     z = x + 6;
     await y;
     w = x + z;
     return w;
 }
 
-main() {
+function main() {
     a = 3;
     b = spawn {
         fn_2(a);
-    }
+    };
     c = 9;
     await b;
-    h = a + b + c;
+    h = b + c;
 }
