@@ -1,8 +1,11 @@
-from Lexer import lex, Token, ParserError, LexerError
+from __future__ import annotations
+from typing import List, Optional, Dict, Tuple
+from lexer import Token, ParserError
+from abstract_syntax_tree import *
 
-# -----------------------------------------------------------------------------
-# Parser (recursive descent)
-# -----------------------------------------------------------------------------
+
+class ParserError(Exception):
+    pass
 
 class Parser:
     def __init__(self, toks: List[Token]):

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List
 import re
 
+
 KEYWORDS = {
     "function", "if", "else", "while", "return",
     "spawn", "await",
@@ -27,9 +28,6 @@ class Token:
     col: int
 
 class LexerError(Exception):
-    pass
-
-class ParserError(Exception):
     pass
 
 def lex(src: str) -> List[Token]:
