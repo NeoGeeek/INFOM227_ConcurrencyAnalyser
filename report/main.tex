@@ -1,0 +1,74 @@
+\documentclass[11pt,a4paper]{article}
+
+% Encodage & langue
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Mise en page
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{setspace}
+\usepackage{float}
+\onehalfspacing
+\usepackage{xspace}
+
+% Liens
+\usepackage[hidelinks]{hyperref}
+
+% En-têtes
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhf{}
+\lhead{\textsc{Rapport Projet 1 -- Outil d'analyse statique -- Version du \today}}
+\rhead{\thepage}
+\usepackage{titlesec}
+
+% Listes et tableaux
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{pdfpages}
+\usepackage{tcolorbox}
+
+% Figures
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pdflscape}
+\usepackage{multicol}
+\usepackage[dvipsnames]{xcolor}
+
+
+% Sous-sections en a), b), c)
+\renewcommand{\thesubsection}{\alph{subsection}}
+
+\titleformat{\section}
+{\normalfont\bfseries}
+{\thesection.}
+{1em}
+{}
+
+\titleformat{\subsection}
+{\normalfont\bfseries}
+{\thesubsection.}
+{1em}
+{}
+
+
+% Meta PDF
+\hypersetup{
+    pdftitle={Projet 1 - Outil d'analyse statique},
+    pdfauthor={},
+    pdfsubject={}
+}
+
+% ------------------------------------------------------------------------
+
+
+\begin{document}
+    \include{sections/0a.titlepage}
+    \include{sections/0b.toc}
+\end{document}
