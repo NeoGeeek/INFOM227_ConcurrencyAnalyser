@@ -1,0 +1,43 @@
+\section{Description de l'outil d'analyse}
+
+Tout d'abord, nous avons décidé de nous pencher sur le sujet de la concurrence dans les programmes.
+Cela permet, dans le langage Small, d'exécuter des portions de code en parallèle via des threads.\\
+
+\subsection{Objectifs}
+
+Plus précisément, notre outil d'analyse statique vise à :
+
+\begin{enumerate}
+    \item Vérifier qu’il n’y a pas d’accès simultané en écriture sur une même variable.
+
+    \item Identifier les accès concurrents à une variable, qu’ils soient en lecture ou en écriture.
+
+    \item Fournir des informations précises pour chaque accès problématique détecté, incluant le numéro de ligne ainsi que les threads concernés.
+\end{enumerate}
+
+\subsection{Caractéristiques}
+
+\begin{enumerate}
+    \item Outil d'analyse statique pour le langage Small, développé en Python.
+
+    \item \textbf{Support d'une concurrence minimale}
+    \begin{enumerate}
+        \item Création de threads via l'instruction \texttt{spawn <fonction>}.
+
+        \item Synchronisation et unification des états via l'instruction \texttt{await <thread>}.
+
+        \item Les mécanismes plus avancés, tels que la notification ou le blocage explicite, ne sont pas pris en compte afin de conserver un modèle minimaliste.
+    \end{enumerate}
+
+    \item \textbf{Analyse multi-variant}
+    \begin{enumerate}
+        \item Chaque thread possède sa propre abstraction.
+
+        \item L'unification des états possibles s'effectue lors de l'instruction \texttt{await}.
+    \end{enumerate}
+
+    \item \textbf{Analyse flow-sensitive}
+    \begin{enumerate}
+        \item Les états des variables sont suivis instruction par instruction, ce qui permet de détecter les usages concurrents à chaque point du programme.
+    \end{enumerate}
+\end{enumerate}
