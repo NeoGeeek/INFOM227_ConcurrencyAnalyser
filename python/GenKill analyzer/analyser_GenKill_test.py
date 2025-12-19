@@ -41,11 +41,11 @@ Output:
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Set, Tuple, Union
+from typing import List, Optional, Dict, Set, Tuple
 import sys
 import argparse
 
-from lexer import lex
+from lexer import lex, LexerError
 from abstract_syntax_tree import *
 from parser import Parser, ParserError
 

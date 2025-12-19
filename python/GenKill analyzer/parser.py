@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Optional, Dict, Tuple
-from lexer import Token, ParserError
+from lexer import Token
 from abstract_syntax_tree import *
 
 
