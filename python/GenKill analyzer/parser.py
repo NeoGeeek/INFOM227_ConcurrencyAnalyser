@@ -7,14 +7,19 @@ from abstract_syntax_tree import *
 class ParserError(Exception):
     pass
 
+# -----------------------
+# Classe principale du Parser
+# -----------------------
 class Parser:
     def __init__(self, toks: List[Token]):
-        self.toks = toks
-        self.i = 0
+        self.toks = toks  # Liste des tokens à parser
+        self.i = 0        # Index courant dans la liste de tokens
 
+    # Retourne le token courant sans avancer
     def peek(self) -> Token:
         return self.toks[self.i]
 
+    # Vérifie si le token courant correspond à un type ou une valeur donnés
     def match(self, kind: Optional[str] = None, value: Optional[str] = None) -> bool:
         t = self.peek()
         if kind and t.kind != kind:
@@ -23,6 +28,7 @@ class Parser:
             return False
         return True
 
+    # Consomme le token courant et avance, en levant une erreur si le type/valeur attendu n'est pas respecté
     def consume(self, kind: Optional[str] = None, value: Optional[str] = None) -> Token:
         t = self.peek()
         if kind and t.kind != kind:
@@ -32,6 +38,9 @@ class Parser:
         self.i += 1
         return t
 
+    # -----------------------
+    # Parsing global d'un programme
+    # -----------------------
     def parse_program(self) -> Program:
         funcs: Dict[str, FunctionDef] = {}
         while not self.match("EOF"):
@@ -41,21 +50,30 @@ class Parser:
             funcs[f.name] = f
         return Program(funcs)
 
+    # -----------------------
+    # Parsing d'une fonction
+    # -----------------------
     def parse_function(self) -> FunctionDef:
-        start = self.consume("KW", "function")
-        name = self.consume("ID").value
+        start = self.consume("KW", "function") # 'function'
+        name = self.consume("ID").value        # Nom de la fonction
         self.consume("SYM", "(")
 
         params: List[str] = []
-        if not self.match("SYM", ")"):
+        if not self.match("SYM", ")"):         # S'il y a des paramètres
             params = self.parse_param_list()
 
         self.consume("SYM", ")")
         self.consume("SYM", "{")
-        stmts = self.parse_stmt_list(until="}")
+        stmts = self.parse_stmt_list(until="}")# Liste des statements jusqu'à '}'
         self.consume("SYM", "}")
-        return FunctionDef(name=name, params=params, body=Seq(line=start.line, stmts=stmts), line=start.line)
+        return FunctionDef(
+            name=name,
+            params=params,
+            body=Seq(line=start.line, stmts=stmts),
+            line=start.line
+        )
 
+    # Parsing de la liste de paramètres d'une fonction
     def parse_param_list(self) -> List[str]:
         params = [self.consume("ID").value]
         while self.match("SYM", ","):
@@ -63,15 +81,20 @@ class Parser:
             params.append(self.consume("ID").value)
         return params
 
+    # Parsing d'une liste de statements jusqu'à un symbole de fin (ex: '}')
     def parse_stmt_list(self, until: str) -> List[Stmt]:
         out: List[Stmt] = []
         while not self.match("SYM", until):
             out.append(self.parse_stmt())
         return out
 
+    # -----------------------
+    # Parsing d'un statement
+    # -----------------------
     def parse_stmt(self) -> Stmt:
         t = self.peek()
 
+        # Statements selon mot-clé
         if t.kind == "KW" and t.value == "if":
             return self.parse_if()
         if t.kind == "KW" and t.value == "while":
@@ -85,29 +108,29 @@ class Parser:
         if t.kind == "KW" and t.value == "await":
             return self.parse_await()
 
-        # identifier-led: assignment or call statement
+        # Statements commençant par un identifiant (assignment ou call)
         if t.kind == "ID":
-            # assignment?
+            # Assignment simple ou call
             if self.toks[self.i + 1].kind == "SYM" and self.toks[self.i + 1].value == "=":
                 lhs = self.consume("ID")
                 self.consume("SYM", "=")
 
-                # spawn assignment?
+                # Spawn assigné à une variable
                 if self.match("KW", "spawn"):
                     return self.parse_spawn(handle=lhs.value)
 
-                # function-call assignment?
+                # Appel de fonction assigné à une variable
                 if self.match("ID") and self.toks[self.i + 1].kind == "SYM" and self.toks[self.i + 1].value == "(":
                     fn, args = self.parse_func_call()
                     self.consume("SYM", ";")
                     return AssignCall(line=lhs.line, target=lhs.value, func=fn, args=args)
 
-                # plain expression assignment
+                # Assignment classique
                 expr = self.parse_expr()
                 self.consume("SYM", ";")
                 return Assign(line=lhs.line, target=lhs.value, expr=expr)
 
-            # call statement?
+            # Appel de fonction simple
             if self.toks[self.i + 1].kind == "SYM" and self.toks[self.i + 1].value == "(":
                 fn, args = self.parse_func_call()
                 self.consume("SYM", ";")
@@ -115,12 +138,18 @@ class Parser:
 
         raise ParserError(f"Unexpected token {t.kind}:{t.value} at line {t.line}")
 
+    # -----------------------
+    # Parsing d'un bloc {...}
+    # -----------------------
     def parse_seq(self) -> Seq:
         start = self.consume("SYM", "{")
         stmts = self.parse_stmt_list(until="}")
         self.consume("SYM", "}")
         return Seq(line=start.line, stmts=stmts)
 
+    # -----------------------
+    # Parsing des structures conditionnelles et boucles
+    # -----------------------
     def parse_if(self) -> If:
         start = self.consume("KW", "if")
         self.consume("SYM", "(")
@@ -139,6 +168,9 @@ class Parser:
         body = self.parse_stmt()
         return While(line=start.line, cond=cond, body=body)
 
+    # -----------------------
+    # Parsing des statements spécifiques
+    # -----------------------
     def parse_return(self) -> Return:
         start = self.consume("KW", "return")
         expr = self.parse_expr()
@@ -155,17 +187,20 @@ class Parser:
         kw = self.consume("KW", "spawn")
         line = kw.line
 
-        # spawn { ... } ;
+        # Spawn avec bloc {...}
         if self.match("SYM", "{"):
             body = self.parse_seq()
             self.consume("SYM", ";")
             return Spawn(line=line, handle=handle, target=SpawnBlock(body=body, line=line))
 
-        # spawn f(e,...) ;
+        # Spawn avec appel de fonction
         fn, args = self.parse_func_call()
         self.consume("SYM", ";")
         return Spawn(line=line, handle=handle, target=SpawnCall(func=fn, args=args, line=line))
 
+    # -----------------------
+    # Parsing des appels de fonction
+    # -----------------------
     def parse_func_call(self) -> Tuple[str, List[Expr]]:
         name = self.consume("ID").value
         self.consume("SYM", "(")
@@ -180,11 +215,14 @@ class Parser:
         self.consume("SYM", ")")
         return name, args
 
+    # -----------------------
+    # Parsing des expressions
+    # -----------------------
     def parse_expr(self) -> Expr:
         left = self.parse_operand()
         t = self.peek()
 
-        # optional binary operator (SMALL-style simple expressions)
+        # Si il y a un opérateur binaire ou logique
         if t.kind == "OP" or (t.kind == "KW" and t.value in ("and", "or")):
             op = self.consume(t.kind).value
             right = self.parse_operand()
@@ -194,6 +232,7 @@ class Parser:
 
         return left
 
+    # Parsing des opérandes simples : nombres, booléens, variables
     def parse_operand(self) -> Expr:
         t = self.peek()
 
