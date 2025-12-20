@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Tuple
-from lexer import Token
-from abstract_syntax_tree import *
+from src.lexer import  Token
+from src.abstract_syntax_tree import *
 
 
 class ParserError(Exception):

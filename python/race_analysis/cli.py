@@ -2,11 +2,11 @@ from __future__ import annotations
 import sys
 import argparse
 
-from lexer import lex, LexerError
-from parser import Parser, ParserError
+from src.lexer import lex, LexerError
+from src.parser import Parser, ParserError
 
-from engine import analyze_program
-from formatting import format_warning
+from src.engine import analyze_program
+from src.formatting import format_warning
 
 
 def analyze_source(src: str):

@@ -21,12 +21,11 @@ kept in dedicated modules.
 from __future__ import annotations
 from typing import Dict, List, Set
 
-from abstract_syntax_tree import *
-
-from effects import Effect, compute_effect_seq, compute_function_effects, substitute_effect, vars_in_expr
-from constraints import enforce_no_spawn_await_in_if_while, list_spawns_awaits
-from concurrency import ConcurState, ThreadInfo, join_states, threadinfo_from_effect
-from conflicts import RaceWarning, mode_for, check_access, check_thread_thread
+from src.abstract_syntax_tree import *
+from src.effects import Effect, compute_effect_seq, compute_function_effects, substitute_effect, vars_in_expr
+from src.constraints import enforce_no_spawn_await_in_if_while, list_spawns_awaits
+from src.concurrency import ConcurState, ThreadInfo, join_states, threadinfo_from_effect
+from src.conflicts import RaceWarning, mode_for, check_access, check_thread_thread
 
 
 # -----------------------------------------------------------------------------

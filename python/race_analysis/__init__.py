@@ -1,6 +1,6 @@
-from .cli import analyze_source, main
-from .conflicts import RaceWarning
-from .formatting import format_warning
+from cli import analyze_source, main
+from src.conflicts import RaceWarning
+from src.formatting import format_warning
 
 __all__ = [
     "analyze_source",

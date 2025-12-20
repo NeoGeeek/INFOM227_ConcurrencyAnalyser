@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Set
 
-from effects import Effect
+from src.effects import Effect
 
 
 @dataclass

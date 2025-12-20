@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abstract_syntax_tree import *
+from src.abstract_syntax_tree import *
 
 
 def enforce_no_spawn_await_in_if_while(stmt: Stmt, inside_control: bool = False) -> None:
