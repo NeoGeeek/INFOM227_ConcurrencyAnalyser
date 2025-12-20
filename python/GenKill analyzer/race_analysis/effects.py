@@ -175,7 +175,7 @@ def compute_effect_stmt(stmt: Stmt, prog: Program, effects: Dict[str, Effect], c
 def compute_function_effects(prog: Program) -> Dict[str, Effect]:
     # monotone union fixpoint
     effs: Dict[str, Effect] = {name: Effect() for name in prog.functions}
-    for _ in range(50):
+    for _ in range(50): # we approximate fixpoint with a max number of iterations
         changed = False
         for fname, fdef in prog.functions.items():
             new_eff = compute_effect_seq(fdef.body, prog, effs, fdef)
