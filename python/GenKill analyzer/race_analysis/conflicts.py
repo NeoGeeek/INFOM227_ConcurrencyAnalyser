@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Set, Tuple
 
-from .concurrency import ConcurState, ThreadInfo
+from concurrency import ConcurState, ThreadInfo
 
 
 @dataclass(frozen=True)

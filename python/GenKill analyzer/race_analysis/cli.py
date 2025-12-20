@@ -5,8 +5,8 @@ import argparse
 from lexer import lex, LexerError
 from parser import Parser, ParserError
 
-from .engine import analyze_program
-from .formatting import format_warning
+from engine import analyze_program
+from formatting import format_warning
 
 
 def analyze_source(src: str):
@@ -37,3 +37,6 @@ def main() -> int:
     except (LexerError, ParserError, ValueError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
+
+if __name__ == "__main__":
+    sys.exit(main())

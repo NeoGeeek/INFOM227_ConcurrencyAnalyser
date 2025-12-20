@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .conflicts import RaceWarning
+from conflicts import RaceWarning
 
 
 def format_warning(w: RaceWarning) -> str:
