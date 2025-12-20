@@ -14,6 +14,10 @@ from race_analysis.formatting import format_warning
 
 if __name__ == "__main__":
     raise SystemExit(main())
+from lexer import lex, LexerError
+from abstract_syntax_tree import *
+from parser import Parser, ParserError
+from rules import enforce_no_spawn_await_in_if_while
 
 
 # -----------------------------------------------------------------------------
@@ -265,19 +269,6 @@ class RaceWarning:
     ctx_a: str
     lines_b: Tuple[int, ...]
     ctx_b: str
-
-def enforce_no_spawn_await_in_if_while(stmt: Stmt, inside_control: bool = False) -> None:
-    if isinstance(stmt, (Spawn, Await)) and inside_control:
-        raise ValueError(f"spawn/await not allowed inside if/while (line {stmt.line})")
-
-    if isinstance(stmt, Seq):
-        for s in stmt.stmts:
-            enforce_no_spawn_await_in_if_while(s, inside_control)
-    elif isinstance(stmt, If):
-        enforce_no_spawn_await_in_if_while(stmt.then_s, True)
-        enforce_no_spawn_await_in_if_while(stmt.else_s, True)
-    elif isinstance(stmt, While):
-        enforce_no_spawn_await_in_if_while(stmt.body, True)
 
 def list_spawns_awaits(stmt: Stmt, spawns=None, awaits=None):
     if spawns is None:
