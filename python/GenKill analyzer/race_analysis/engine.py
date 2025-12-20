@@ -35,7 +35,6 @@ from conflicts import RaceWarning, mode_for, check_access, check_thread_thread
 
 def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[str, List[ThreadInfo]]:
     """
-<<<<<<< Updated upstream
     Identifie les threads "échappés" d'une fonction, c'est-à-dire ceux qui
     sont spawnés mais jamais awaités dans la fonction. On les traite comme
     des threads qui continuent à s'exécuter après le retour de la fonction.
@@ -43,7 +42,6 @@ def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[
     :param prog: programme analysé
     :param effects: effets calculés pour chaque fonction
     :return: dictionnaire fonction -> liste de ThreadInfo représentant les threads échappés
-=======
     Compute, for each function, the set of threads that may outlive the call site.
 
     Rationale
@@ -66,7 +64,6 @@ def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[
     Dict[str, List[ThreadInfo]]
         For each function name, a list of ThreadInfo describing escaped threads
         that should be added at call sites of that function.
->>>>>>> Stashed changes
     """
     esc: Dict[str, List[ThreadInfo]] = {}
     for fname, fdef in prog.functions.items():
@@ -108,7 +105,6 @@ def analyze_stmt(
     warnings: Set[RaceWarning],
 ) -> ConcurState:
     """
-<<<<<<< Updated upstream
     Analyse un statement et met à jour l'état concurrent et la liste des warnings.
 
     :param stmt: statement à analyser
@@ -119,7 +115,6 @@ def analyze_stmt(
     :param state: état courant des threads
     :param warnings: ensemble des avertissements détectés
     :return: nouvel état concurrent mis à jour
-=======
     Analyze a single statement, update the concurrent state, and emit warnings.
 
     The function is a structural traversal over the AST statements. At each step it:
@@ -153,7 +148,6 @@ def analyze_stmt(
     -------
     ConcurState
         The updated state after analyzing `stmt`.
->>>>>>> Stashed changes
     """
 
     def add_all(ws: List[RaceWarning]) -> None:
@@ -256,11 +250,8 @@ def analyze_stmt(
                 state.handle_env[stmt.handle] = set()
             add_all(check_access(state, stmt.handle, "W", stmt.line, f"{current_func.name}:W(handle) at spawn line {stmt.line}"))
 
-<<<<<<< Updated upstream
         # évaluation des arguments du spawn
-=======
         # Parent (spawner) evaluates arguments before the new thread starts.
->>>>>>> Stashed changes
         if isinstance(stmt.target, SpawnCall):
             arg_reads: Set[str] = set()
             for a in stmt.target.args:
@@ -296,10 +287,7 @@ def analyze_stmt(
         if stmt.handle is not None:
             state.handle_env.setdefault(stmt.handle, set()).add(tid)
         else:
-<<<<<<< Updated upstream
-=======
             # allow await <functionName> for "spawn f(...);" form (syntactic sugar)
->>>>>>> Stashed changes
             if isinstance(stmt.target, SpawnCall):
                 state.handle_env.setdefault(stmt.target.func, set()).add(tid)
 
@@ -351,18 +339,15 @@ def analyze_stmt(
 
 def analyze_program(prog: Program) -> List[RaceWarning]:
     """
-<<<<<<< Updated upstream
     Analyse un programme entier pour détecter les data races statiques.
 
     :param prog: programme déjà parsé
     :return: liste triée de RaceWarning
-    """
+
     # imposer la contrainte : pas de spawn/await dans if/while
-=======
     Run the complete race analysis pipeline over a parsed program.
 
     Steps
-    -----
     1) Enforce the project constraint that forbids spawn/await inside if/while,
        which keeps the control-flow reasoning simple and conservative.
     2) Compute interprocedural effects for each function (reads/writes and sites).
@@ -380,7 +365,6 @@ def analyze_program(prog: Program) -> List[RaceWarning]:
         A sorted list of race warnings for stable output.
     """
     # enforce project constraint
->>>>>>> Stashed changes
     for f in prog.functions.values():
         enforce_no_spawn_await_in_if_while(f.body, inside_control=False)
 
