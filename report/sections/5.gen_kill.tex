@@ -1,0 +1,65 @@
+\section{Fonctions GEN/KILL}
+
+Nous avons choisi d'implémenter une analyse de type GEN/KILL pour notre outil d'analyse statique.
+Cette approche nous permet de suivre les accès en lectures ou en écritures des variables.
+
+Nous avons décider d'implémenter deux ensembles GEN/KILL, un destiné à l'accès en lecture, l'autre pour l'écriture.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{figure/gen_kill}
+    \label{fig:GenKill}
+\end{figure}
+
+Cette figure illustre les doubles ensembles de notre analyse GEN/KILL.\\
+En nous basant sur notre lattice, nous avons défini les ensembles GEN et KILL pour chaque type d'accès.\\
+Le double ensemble vide représente l'état \textit{Free} de la variable, où aucun accès n'a été effectué.\\
+Lorsque nous rencontrons un accès en lecture, nous ajoutons cet accès au premier ensemble, étant donné qu'il n'y aucun d'accès en écriture.\\
+Inversement, lorsqu'un accès en écriture est rencontré, nous ajoutons cet accès au second ensemble.\\
+Cependant, si un accès en écriture et un accès en lecture sont détectés, nous ajoutons au deux ensemble, et la variable passe dans un état \textit{Read+Write}.\\
+
+Voici les différentes règles que nous avons définies pour nos fonctions GEN/KILL :
+
+\begin{itemize}
+    \item \textbf{Affectation :} $x = e$
+    \[
+        \text{gen}(x = e) = (\text{Var}(e), \{x\}), \quad
+        \text{kill}(x = e) = (0, 0)
+    \]
+
+    \item \textbf{Lecture / Return :} $x$ ou $\text{return } x$
+    \[
+        \text{gen}(x) = (\{x\}, 0), \quad
+        \text{kill}(x) = (0, 0)
+    \]
+
+    \item \textbf{Appel de fonction :} $f(e)$
+    \[
+        \text{gen}(f(e)) = \text{effet de la fonction } f, \quad
+        \text{kill}(f(e)) = (0, 0)
+    \]
+
+    \item \textbf{Spawn :} $t = \text{spawn}\{s\}$
+    \[
+        \text{gen}(t = \text{spawn}\{s\}) = \text{effet de la séquence } s, \quad
+        \text{kill}(t = \text{spawn}\{s\}) = (0, 0)
+    \]
+
+    \item \textbf{Await :} $\text{await } t$
+    \[
+        \text{gen}(\text{await } t) = (0, 0), \quad
+        \text{kill}(\text{await } t) = \text{effet du thread } t
+    \]
+\end{itemize}
+
+Dans ces règles, $\text{Var}(e)$ représente l'ensemble des variables utilisées dans l'expression $e$.\\
+
+L'effet d'une fonction ou d'un thread est déterminé en analysant le corps de la fonction ou du thread pour identifier les accès en lecture et en écriture aux variables.\\
+
+En utilisant ces fonctions GEN/KILL, nous pouvons analyser le flux de contrôle du programme pour déterminer l'état abstrait de chaque variable à chaque point du programme, en tenant compte des accès concurrents effectués par différents threads.\\
+Si un accès en écriture est détecté dans un thread, nous mettons à jour l'état de la variable en conséquence, ce qui nous permet de détecter les accès concurrents problématiques.\\
+Un accès problématique est défini comme suit :
+\begin{itemize}
+    \item Deux accès en écriture concurrents à une même variable.
+    \item Un accès en écriture et un accès en lecture concurrents à une même variable
+\end{itemize}

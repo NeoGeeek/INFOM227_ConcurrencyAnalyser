@@ -1,0 +1,127 @@
+\section{\textit{Soundness} et \textit{Completeness} de l'analyse}
+
+L'analyse statique que nous avons implémentée est \textit{sound} mais pas \textit{complete}.
+
+\subsection{\textit{Soundness}}
+
+Une analyse est considérée comme \textit{sound} si elle sur-approxime les comportements possibles du programme.
+Dans notre cas, cela signifie que si notre analyse signale un accès problématique à une variable, alors il existe un scénario d'exécution dans lequel cet accès \textbf{peut} se produire.
+Voici un exemple simple pour illustrer ce concept :
+
+\begin{lstlisting}[style=SmallLang]
+int a;
+
+function increment() {
+    a = a + 1;
+}
+
+main() {
+    a = 3;                // ligne 1
+    t = spawn {           // ligne 2
+        increment();      // ligne 3
+    }
+    a = a + 1;            // ligne 4
+    await t;              // ligne 5
+}
+\end{lstlisting}
+
+\begin{tikzpicture}[
+    node distance=2cm,
+    state/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=1cm, align=center},
+    thread/.style={dashed, draw, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center}
+]
+
+    \node[state] (line1) {Line 1: a = 3 \\ \textbf{Write}};
+    \node[state, below=of line1] (line2) {Line 2: t = spawn\{increment()\} \\ \textbf{Write (spawn thread)}};
+    \node[state, below=of line2] (line4) {Line 4: a = a + 1 \\ \textbf{Used (Read+Write)}};
+    \node[state, below=of line4] (line5) {Line 5: await t \\ \textbf{Used}};
+
+    \node[thread, right=4cm of line2] (spawn) {Spawn thread: increment() \\ Line 3: a = a + 1 \\ \textbf{Write}};
+
+    \draw[->, thick] (line1) -- (line2);
+    \draw[->, thick] (line2) -- (line4);
+    \draw[->, thick] (line4) -- (line5);
+
+    \draw[->, thick, dashed] (line2.east) -- (spawn.west);
+    \draw[->, thick, dashed] (spawn.west) -- (line5.east);
+
+    \node[above=0.1cm of line2] {Thread parent};
+    \node[above=0.1cm of spawn] {Thread child (spawn)};
+
+\end{tikzpicture}
+
+Dans ce simple exemple, on prouve la \textit{soundness} de notre analyse car aucun accès dangereux est ignoré.
+
+\subsection{\textit{Completeness}}
+
+Une analyse est considérée comme \textit{complete} si elle ne signale que les accès problématiques qui se produisent réellement dans le programme.
+Dans notre cas, cela signifierait que si notre analyse ne signale pas d'accès problématique faussement positif.
+
+\begin{lstlisting}[style=SmallLang]
+main() {
+    a = 0;
+    t = spawn {
+        b = 1;
+    }
+    c = a + 1;
+    await t;
+}
+\end{lstlisting}
+
+\begin{tikzpicture}[
+    node distance=2cm,
+    state/.style={rectangle, draw, rounded corners, minimum width=3.5cm, minimum height=1cm, align=center},
+    thread/.style={dashed, draw, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center}
+]
+
+    \node[state] (line1) {Line 1: a = 0 \\ \textbf{Write}};
+    \node[state, below=of line1] (line2) {Line 2: t = spawn\{b = 1\} \\ \textbf{Write (spawn thread)}};
+    \node[state, below=of line2] (line3) {Line 3: c = a + 1 \\ \textbf{Used (Read+Write)}};
+    \node[state, below=of line3] (line4) {Line 4: await t \\ \textbf{Used}};
+
+    \node[thread, right=4cm of line2] (spawn) {Spawn thread: b = 1 \\ \textbf{Write}};
+
+    \draw[->, thick] (line1) -- (line2);
+    \draw[->, thick] (line2) -- (line3);
+    \draw[->, thick] (line3) -- (line4);
+
+    \draw[->, thick, dashed] (line2.east) -- (spawn.west);
+    \draw[->, thick, dashed] (spawn.west) -- (line4.east);
+
+    \node[above=0.1cm of line2] {Thread parent};
+    \node[above=0.1cm of spawn] {Thread child (spawn)};
+
+\end{tikzpicture}
+
+Dans ce simple exemple, notre analyse signale un accès problématique à la variable \texttt{a} dans le thread parent, car elle est lue après avoir été écrite. Cependant, comme le thread enfant n'accède pas à \texttt{a}, il n'y a pas de conflit réel. Ainsi, notre analyse génère un faux positif, ce qui prouve qu'elle n'est pas \textit{complete}.
+
+\subsection{\textit{Local Soundness}}
+
+
+Une analyse est localement \textit{sound} si, pour chaque instruction individuelle, l'état concret possible après l’instruction est représenté dans l’approximation abstraite produite par l’analyse.
+Pour prouver que notre analyse est localement \textit{sound}, nous prendrons une instruction d'assignation: \texttt{x = e}.
+Cette instruction simple mais nécéssaire, car elle génère à la fois un accès en écriture à la variable \texttt{x} et des accès en lecture aux variables utilisées dans l'expression \texttt{e}.
+
+\subsubsection{Preuve}
+
+Soit l'état concret \texttt{S}.
+
+\paragraph{Cas 1 : Aucun accès concurrent avec écriture n'est pas possible}
+L’exécution concrète de l’instruction produit uniquement des lectures et/ou écritures dans un même thread.
+
+L’abstraction de l’état résultant est alors \texttt{Read}, \texttt{Write} ou \texttt{Read+Write}.
+La \textit{flow function abstraite} produit exactement cette valeur ou une valeur plus générale.
+
+\paragraph{Cas 2 : Un accès concurrent avec écriture est possible}
+Une situation de concurrence existe dans l’exécution concrète.
+
+L’abstraction de l’état concret est alors \texttt{Used}, et la \textit{flow function abstraite} produit également \texttt{Used}.
+
+\subsubsection{Conclusion}
+
+Dans tous les cas, on a :
+\[
+    \alpha(F_c(S)) \;\sqsubseteq\; F_a(\alpha(S))
+\]
+
+La \textit{flow function} associée à l’instruction \texttt{x = e} est donc \textit{local sound}, car elle sur-approxime toujours les effets de l’exécution concrète.

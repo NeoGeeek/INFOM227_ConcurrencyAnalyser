@@ -1,0 +1,35 @@
+\section{Erreurs détectées}
+
+Cette section présente les différentes erreurs et avertissements que notre outil d'analyse statique peut détecter dans les programmes écrits en langage Small.
+
+\subsection{Erreurs d'accès problématiques}
+Notre outil est capable de détecter les accès concurrents problématiques aux variables, notamment :
+\begin{itemize}
+    \item \textbf{Accès simultané en écriture :} lorsque deux threads ou plus tentent d'écrire simultanément dans la même variable.
+    \item \textbf{Accès en lecture et écriture concurrents :} lorsqu'un thread lit une variable pendant qu'un autre thread écrit dans cette même variable.
+\end{itemize}
+
+\subsection{Avertissements sur les accès potentiellement problématiques}
+Notre analyse produit des avertissements lorsque l'outil détecte l'une des erreurs citées précédemment.
+
+Un message apparaît en fin d'analyse pour détailler les accès problématiques détectés.
+Le format du message est le suivant :
+\begin{center}
+    \parbox{0.65\textwidth}{%
+        X race candidate(s) found:
+
+        [RACE] var=Y @ line Z (AccessType\_1 vs AccessType\_2) \\
+        A: main:AccessType\_1 at line Z \\
+        B: lines \{P\} in spawn method\_name(...) in main (spawn line Q)
+    }
+\end{center}
+
+où :
+\begin{itemize}
+    \item \textbf{X} : nombre total d'accès problématiques détectés.
+    \item \textbf{var=Y} : la variable concernée par l'accès problématique.
+    \item \textbf{line Z} : le numéro de ligne où l'accès problématique a été détecté.
+    \item \textbf{(AccessType\_1 vs AccessType\_2)} : le type d'accès en conflit (R pour Read, W pour Write, RW pour Read+Write, T pour Thread).
+    \item \textbf{lines \{P\}} : les numéros de lignes dans la méthode associée au spawn où l'accès problématique est en conflit.
+    \item \textbf{main (spawn line Q)} : le numéro de ligne où l'instruction spaw
+\end{itemize}
