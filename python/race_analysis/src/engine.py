@@ -1,21 +1,21 @@
 """
 engine
 
-Core orchestration of the SMALL concurrency race analyzer.
+Orchestration centrale de l'analyseur de data races pour SMALL.
 
-Responsibilities of this module:
-- Determine which spawned threads can escape a function (not awaited locally).
-- Traverse statements and maintain a concurrent state (active threads and handle environment).
-- Check read/write accesses against active threads to report potential data races.
-- Provide a simple entry point that runs all necessary phases on a parsed Program.
+Responsabilités de ce module :
+- Déterminer quels threads spawnés peuvent "échaper" d'une fonction (non awaités localement).
+- Parcourir les statements et maintenir un état concurrent (threads actifs et environnement des handles).
+- Vérifier les accès en lecture/écriture par rapport aux threads actifs pour détecter les potentielles data races.
+- Fournir un point d'entrée simple qui exécute toutes les phases nécessaires sur un Program déjà parsé.
 
-Key concepts:
-- Effect: Interprocedural read/write footprint for functions or blocks (see effects.py).
-- ThreadInfo: Snapshot of a thread's footprint used to check conflicts (see concurrency.py).
-- ConcurState: Set of currently active threads + a mapping from handle variables to thread IDs.
+Concepts clés :
+- Effect : empreinte interprocédurale en lecture/écriture pour les fonctions ou blocs (voir effects.py).
+- ThreadInfo : capture de l'empreinte d'un thread utilisée pour vérifier les conflits (voir concurrency.py).
+- ConcurState : ensemble de threads actuellement actifs + mapping des variables handle vers les IDs de thread.
 
-This file only contains analysis logic and light glue; parsing/formatting and other concerns are
-kept in dedicated modules.
+Ce fichier contient uniquement la logique d'analyse et un peu de "glue" ; parsing/formatage et autres préoccupations
+sont gérés dans des modules dédiés.
 """
 
 from __future__ import annotations
@@ -156,8 +156,7 @@ def analyze_stmt(
 
     # Assignements simples
     if isinstance(stmt, Assign):
-        # Overwriting a handle variable invalidates any previously bound thread IDs
-        # to prevent accidental awaits on stale handles.
+        # Réinitialisation des bindings de handle pour éviter les awaits sur des handles obsolètes
         if stmt.target in state.handle_env:
             state.handle_env[stmt.target] = set()
 
@@ -181,21 +180,24 @@ def analyze_stmt(
         for a in stmt.args:
             arg_reads |= vars_in_expr(a)
 
+        # Vérifie les lectures des arguments
         for var in sorted(arg_reads):
             add_all(check_access(state, var, "R", stmt.line, f"{current_func.name}:R(arg) at call site line {stmt.line}"))
 
         callee_def = prog.functions[stmt.func]
         callee_eff = substitute_effect(effects[stmt.func], callee_def, stmt.args)
 
+        # Vérifie les lectures/écritures dans le corps appelé
         for var in sorted(callee_eff.reads | callee_eff.writes):
             m = mode_for(var, callee_eff.reads, callee_eff.writes)
             lines = (callee_eff.read_sites.get(var, set()) | callee_eff.write_sites.get(var, set())) or {stmt.line}
             ln = min(lines)
             add_all(check_access(state, var, m, ln, f"{stmt.func}:{m} during call from {current_func.name} at line {stmt.line}"))
 
+        # Vérifie l'écriture du résultat
         add_all(check_access(state, stmt.target, "W", stmt.line, f"{current_func.name}:W(ret) at line {stmt.line}"))
 
-        # propagation conservatrice des threads échappés
+        # Propagation des threads échappés
         for t in escapes.get(stmt.func, []):
             base = Effect(
                 reads=set(t.reads),
