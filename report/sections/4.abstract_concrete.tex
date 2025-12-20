@@ -1,5 +1,29 @@
 \section{Fonction d'abstraction et de concrétisation}
 
 \subsection{Fonction d'abstraction}
+\[
+    \alpha(x) =
+    \begin{cases}
+        \text{Free} & \text{si } x = \emptyset,\\[2mm]
+        \text{Read} & \text{si } x \text{ contient uniquement des instructions \textit{read}},\\[1mm]
+        \text{Write} & \text{si } x \text{ contient uniquement des instructions \textit{write}},\\[1mm]
+        \text{Read+Write} & \text{si } x \text{ contient au moins un \textit{read} et au moins un \textit{write}},\\[1mm]
+        \text{Used} & \text{sinon}.
+    \end{cases}
+\]
+
+\textit{x} est un ensemble d'instructions accédant à une variable.\\
+Une instruction est considérée comme un accès \textit{write}, si c'est une assignation de valeur à une variable.\\
+Toute autre instruction qui utilise la variable est considérée comme un accès \textit{read}.
 
 \subsection{Fonction de concrétisation}
+\[
+    \gamma(x) =
+    \begin{cases}
+        \emptyset & \text{si } x = \text{Free},\\[2mm]
+        \text{Uniquement des instructions \textit{read}} & \text{si } x = \text{Read},\\[1mm]
+        \text{Uniquement des instructions \textit{write}} & \text{si } x = \text{Write},\\[1mm]
+        \text{Au moins une instruction \textit{read} et au moins une instruction \textit{write}} & \text{si } x = \text{Read+Write},\\[1mm]
+        \text{Used} & \text{sinon}.
+    \end{cases}
+\]
