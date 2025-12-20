@@ -1,0 +1,12 @@
+\section{Type d'analyse}
+
+Comme cité dans la descrition, l'analyse réalisée dans ce projet est une analyse \textit{forward}.
+
+En effet, l'analyse commence à partir du début du programme et progresse vers la fin, en suivant le \textit{control-flow} du programme.
+
+Cette approche est particulièrement adaptée pour détecter les accès concurrents problématiques aux variables, car elle permet de suivre l'état des variables au fur et à mesure que le programme s'exécute.
+
+De plus, notre analyse est \textit{flow-sensitive}, ce qui signifie qu'elle prend en compte l'ordre des instructions dans le programme.
+
+C'est donc pour ça que nous avons choisi une analyse \textit{forward} pour notre outil d'analyse et non pas un autre type d'analyse comme \textit{backward}.
+
