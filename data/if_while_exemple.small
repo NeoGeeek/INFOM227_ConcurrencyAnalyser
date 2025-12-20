@@ -1,0 +1,14 @@
+function main(x) {
+    y = 0;
+
+    while (x > 0) {
+        if (x > 5) {
+            y = y + 2;
+        } else {
+            y = y + 1;
+        }
+        x = x - 1;
+    }
+
+    return y;
+}

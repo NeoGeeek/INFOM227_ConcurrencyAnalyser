@@ -6,9 +6,9 @@ import re
 
 # Ensemble des mots-clés du langage que le lexer doit reconnaître
 KEYWORDS = {
-    "function", "if", "else", "while", "return",  # Mots-clés de contrôle/structure
+    "function", "if", "else", "while", "return", # Mots-clés de contrôle/structure
     "spawn", "await",                            # Mots-clés liés à la concurrence/asynchronisme
-    "True", "False", "and", "or",                # Booléens et opérateurs logiques
+    "True", "False",                             # Booléens
 }
 
 # Expression régulière principale pour identifier les différents types de tokens
