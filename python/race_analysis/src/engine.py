@@ -34,35 +34,28 @@ from src.conflicts import RaceWarning, mode_for, check_access, check_thread_thre
 
 def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[str, List[ThreadInfo]]:
     """
-    Identifie les threads "échappés" d'une fonction, c'est-à-dire ceux qui
-    sont spawnés mais jamais awaités dans la fonction. On les traite comme
-    des threads qui continuent à s'exécuter après le retour de la fonction.
+    Calcul, pour chaque fonction, de l'ensemble des threads pouvant survivre après le point d'appel.
 
-    :param prog: programme analysé
-    :param effects: effets calculés pour chaque fonction
-    :return: dictionnaire fonction -> liste de ThreadInfo représentant les threads échappés
-    Compute, for each function, the set of threads that may outlive the call site.
+    Justification
+    -------------
+    Dans le cadre du projet (pas de spawn/await dans if/while), il est possible de déterminer
+    de manière syntaxique si un spawn est awaité dans la même fonction. Un spawn dont le handle
+    n'est jamais awaité est considéré comme "échappant" à la fonction : lorsque la fonction
+    retourne, ce thread peut continuer à s'exécuter en parallèle avec l'appelant.
 
-    Rationale
-    ---------
-    Under the project constraint (no spawn/await inside if/while), whether a spawn
-    is awaited within the same function can be determined syntactically. A spawn
-    whose handle is never awaited is considered to "escape" the function: when the
-    function returns, that thread can still be running concurrently with the caller.
-
-    Parameters
+    Paramètres
     ----------
-    prog: Program
-        Parsed program containing function definitions.
-    effects: Dict[str, Effect]
-        Interprocedural effects per function, used to approximate the footprint of
-        a spawned call.
+    prog : Program
+        Programme parsé contenant les définitions de fonctions.
+    effects : Dict[str, Effect]
+        Effets interprocéduraux pour chaque fonction, utilisés pour approximer
+        l'empreinte d'un appel spawné.
 
-    Returns
+    Retours
     -------
     Dict[str, List[ThreadInfo]]
-        For each function name, a list of ThreadInfo describing escaped threads
-        that should be added at call sites of that function.
+        Pour chaque nom de fonction, liste de ThreadInfo décrivant les threads échappés
+        qui doivent être ajoutés aux sites d'appel de cette fonction.
     """
     esc: Dict[str, List[ThreadInfo]] = {}
     for fname, fdef in prog.functions.items():
@@ -104,49 +97,40 @@ def analyze_stmt(
     warnings: Set[RaceWarning],
 ) -> ConcurState:
     """
-    Analyse un statement et met à jour l'état concurrent et la liste des warnings.
+    Analyse un seul statement, met à jour l'état concurrent et émet des avertissements.
 
-    :param stmt: statement à analyser
-    :param prog: programme complet
-    :param effects: effets calculés pour chaque fonction
-    :param escapes: threads échappés
-    :param current_func: fonction contenant le statement
-    :param state: état courant des threads
-    :param warnings: ensemble des avertissements détectés
-    :return: nouvel état concurrent mis à jour
-    Analyze a single statement, update the concurrent state, and emit warnings.
+    La fonction effectue un parcours structurel des statements de l'AST. À chaque étape, elle :
+      1) Approxime l'empreinte lecture/écriture de l'opération courante (y compris
+         la substitution interprocédurale pour les appels et les spawns),
+      2) Compare ces accès avec les threads actuellement actifs dans `state`
+         pour détecter d'éventuelles data races (voir conflicts.py),
+      3) Met à jour `state` (par ex. en enregistrant de nouveaux threads actifs pour un spawn,
+         en liant les handles, en supprimant les threads sur await),
+      4) Accumule les avertissements dans l'ensemble `warnings` fourni.
 
-    The function is a structural traversal over the AST statements. At each step it:
-      1) Approximates the read/write footprint of the current operation (including
-         interprocedural substitution for calls/spawns),
-      2) Compares those accesses against the currently active threads in `state`
-         to detect potential data races (see conflicts.py),
-      3) Updates the `state` (e.g., recording new active threads for spawn, binding
-         handles, removing threads on await),
-      4) Accumulates warnings into the provided `warnings` set.
-
-    Parameters
+    Paramètres
     ----------
-    stmt: Stmt
-        Statement to analyze.
-    prog: Program
-        Program being analyzed; used to resolve function definitions.
-    effects: Dict[str, Effect]
-        Precomputed interprocedural effects for each function name.
-    escapes: Dict[str, List[ThreadInfo]]
-        Escaping threads per function to be added at call sites.
-    current_func: FunctionDef
-        Definition of the function currently being analyzed; used for context strings
-        and for computing block effects when needed.
-    state: ConcurState
-        Current concurrent state (active threads + handle environment) before `stmt`.
-    warnings: Set[RaceWarning]
-        Global set used to collect unique warnings during analysis.
+    stmt : Stmt
+        Statement à analyser.
+    prog : Program
+        Programme en cours d'analyse ; utilisé pour résoudre les définitions de fonctions.
+    effects : Dict[str, Effect]
+        Effets interprocéduraux pré-calculés pour chaque fonction.
+    escapes : Dict[str, List[ThreadInfo]]
+        Threads échappés par fonction à ajouter aux sites d'appel.
+    current_func : FunctionDef
+        Définition de la fonction en cours d'analyse ; utilisée pour les chaînes de contexte
+        et pour calculer les effets de blocs si nécessaire.
+    state : ConcurState
+        État concurrent courant (threads actifs + environnement des handles) avant `stmt`.
+    warnings : Set[RaceWarning]
+        Ensemble global utilisé pour collecter les avertissements uniques pendant l'analyse.
 
-    Returns
+    Retours
     -------
     ConcurState
-        The updated state after analyzing `stmt`.
+        L'état mis à jour après l'analyse de `stmt`.
+
     """
 
     def add_all(ws: List[RaceWarning]) -> None:
@@ -171,8 +155,8 @@ def analyze_stmt(
 
     # Assignments via appel de fonction
     if isinstance(stmt, AssignCall):
-        # x = f(...): evaluate args (reads), account for callee effects, then write x,
-        # and add any escaped threads from f.
+        # x = f(...): évaluer les arguments (lectures), prendre en compte les effets de la fonction appelée,
+        # puis écrire dans x, et ajouter tous les threads échappés provenant de f
         if stmt.target in state.handle_env:
             state.handle_env[stmt.target] = set()
 
@@ -244,51 +228,50 @@ def analyze_stmt(
 
     # Spawn de thread
     if isinstance(stmt, Spawn):
-        # Handle creation (if any) is a write to the handle variable.
+        # La création d'un handle (si elle existe) est considérée comme une écriture dans la variable handle
         if stmt.handle is not None:
-            # Reset any previous binding for this handle to avoid stale awaits.
+            # Réinitialise toute liaison précédente pour ce handle afin d'éviter des await obsolètes
             if stmt.handle in state.handle_env:
                 state.handle_env[stmt.handle] = set()
             add_all(check_access(state, stmt.handle, "W", stmt.line, f"{current_func.name}:W(handle) at spawn line {stmt.line}"))
 
-        # évaluation des arguments du spawn
-        # Parent (spawner) evaluates arguments before the new thread starts.
+        # Le parent (thread spawnant) évalue les arguments avant que le nouveau thread ne démarre
         if isinstance(stmt.target, SpawnCall):
             arg_reads: Set[str] = set()
             for a in stmt.target.args:
                 arg_reads |= vars_in_expr(a)
 
-            # Any read for argument evaluation can race with existing threads.
+            # Toute lecture pour l'évaluation des arguments peut entrer en conflit avec des threads existants
             for var in sorted(arg_reads):
                 add_all(check_access(state, var, "R", stmt.line, f"{current_func.name}:R(arg) at spawn line {stmt.line}"))
 
-            # New thread's footprint is that of the callee with actual args substituted.
+            # L'empreinte du nouveau thread correspond à celle de la fonction appelée, avec les arguments réels substitués
             callee_def = prog.functions[stmt.target.func]
             thr = substitute_effect(effects[stmt.target.func], callee_def, stmt.target.args)
             desc = f"spawn {stmt.target.func}(...) in {current_func.name}"
             tid_base = stmt.handle if stmt.handle else stmt.target.func
 
         else:
-            # Block spawn: compute footprint of the block as the new thread's effect.
+            # Spawn de bloc : calculer l'empreinte du bloc comme effet du nouveau thread
             thr = compute_effect_seq(stmt.target.body, prog, effects, current_func)
             desc = f"spawn {{block}} in {current_func.name}"
             tid_base = stmt.handle if stmt.handle else "_anon"
 
-        # Create a fresh thread identifier and check pairwise overlaps with existing threads.
+        # Créer un identifiant de thread unique et vérifier les chevauchements par paires avec les threads existants
         tid = f"{current_func.name}:{tid_base}@{stmt.line}"
         newt = threadinfo_from_effect(thr, tid, desc, stmt.line)
 
         for old in list(state.active.values()):
             add_all(check_thread_thread(newt, old, stmt.line))
 
-        # Activate the new thread.
+        # Activer le nouveau thread
         state.active[tid] = newt
 
-        # Bind the handle to this thread id so that a later await can join it.
+        # Lier le handle à cet identifiant de thread pour qu'un await ultérieur puisse le rejoindre
         if stmt.handle is not None:
             state.handle_env.setdefault(stmt.handle, set()).add(tid)
         else:
-            # allow await <functionName> for "spawn f(...);" form (syntactic sugar)
+            # Autoriser await <nomFonction> pour la forme "spawn f(...);" (sucre syntaxique)
             if isinstance(stmt.target, SpawnCall):
                 state.handle_env.setdefault(stmt.target.func, set()).add(tid)
 
@@ -296,11 +279,11 @@ def analyze_stmt(
 
     # Await d'un handle
     if isinstance(stmt, Await):
-        # Await joins all threads currently bound to the given handle.
+        tids = state.handle_env.get(stmt.handle, set())
         tids = state.handle_env.get(stmt.handle, set())
         for tid in list(tids):
             state.active.pop(tid, None)
-        # Clear bindings for the handle after the await.
+        state.handle_env[stmt.handle] = set()
         state.handle_env[stmt.handle] = set()
         return state
 
@@ -340,30 +323,24 @@ def analyze_stmt(
 
 def analyze_program(prog: Program) -> List[RaceWarning]:
     """
-    Analyse un programme entier pour détecter les data races statiques.
-
-    :param prog: programme déjà parsé
-    :return: liste triée de RaceWarning
-
-    # imposer la contrainte : pas de spawn/await dans if/while
-    Run the complete race analysis pipeline over a parsed program.
-
-    Steps
-    1) Enforce the project constraint that forbids spawn/await inside if/while,
-       which keeps the control-flow reasoning simple and conservative.
-    2) Compute interprocedural effects for each function (reads/writes and sites).
-    3) Compute escaped threads for each function using those effects.
-    4) For each function body, traverse statements and accumulate warnings.
-
-    Parameters
+    Exécute l'analyse complète des data races sur un programme déjà parsé.
+    
+    Étapes
+    1) Imposer la contrainte du projet interdisant spawn/await dans if/while,
+       ce qui permet de garder le raisonnement sur le flot de contrôle simple et conservatif.
+    2) Calculer les effets interprocéduraux pour chaque fonction (lectures/écritures et sites).
+    3) Identifier les threads échappés pour chaque fonction à partir de ces effets.
+    4) Pour chaque corps de fonction, parcourir les statements et accumuler les avertissements.
+    
+    Paramètres
     ----------
     prog: Program
-        Parsed program as produced by the parser.
-
-    Returns
+        Programme parsé tel que produit par le parser.
+    
+    Retours
     -------
     List[RaceWarning]
-        A sorted list of race warnings for stable output.
+        Liste triée des avertissements de data races pour un affichage stable.
     """
     # enforce project constraint
     for f in prog.functions.values():
