@@ -37,7 +37,7 @@ def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[
                 desc = f"escaped spawn {s.target.func}(...) from {fname}"
             else:
                 thr = compute_effect_seq(s.target.body, prog, effects, fdef)
-                desc = f"escaped spawn {block} from {fname}".format(block="{block}")
+                desc = f"escaped spawn {{block}} from {fname}".format(block="{block}")
 
             tid = f"{fname}:{s.handle}@{s.line}"
             threads.append(threadinfo_from_effect(thr, tid, desc, s.line))
