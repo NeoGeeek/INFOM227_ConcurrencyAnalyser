@@ -6,17 +6,32 @@ from abstract_syntax_tree import *
 
 
 # -----------------------------------------------------------------------------
-# Helpers: variable extraction
+# Variable extraction
 # -----------------------------------------------------------------------------
 
 
-def vars_in_expr(e: Expr) -> Set[str]:
+def vars_in_expr(e: Expr) -> set[str]:
+    """
+    Retourne l'ensemble des noms de variables utilisés dans une expression.
+
+    :param e: expression à analyser (Var, Num, Bool, BinOp, RelOp)
+    :return: set de noms de variables (strings)
+    """
+
+    # Si c'est une variable, on retourne un set contenant son nom
     if isinstance(e, Var):
         return {e.name}
+
+    # Si c'est un nombre ou un booléen, aucune variable n'est utilisée
     if isinstance(e, (Num, Bool)):
         return set()
+
+    # Si c'est une opération binaire ou relationnelle,
+    # on prend l'union des variables dans l'opérande gauche et droite
     if isinstance(e, (BinOp, RelOp)):
         return vars_in_expr(e.left) | vars_in_expr(e.right)
+
+    # Si l'expression n'est pas reconnue, on lève une erreur
     raise TypeError(e)
 
 
