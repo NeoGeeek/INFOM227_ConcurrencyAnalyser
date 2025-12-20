@@ -2,52 +2,18 @@
 # -*- coding: utf-8 -*-
 
 """
-SMALL Race Analyzer
-===================
-
-Static race-condition detector for SMALL + concurrency extensions:
-  - spawn <call> ;           (optionally: t = spawn <call> ;)
-  - spawn { <stmt>* } ;      (optionally: t = spawn { ... } ;)
-  - await <handle> ;
-
-Project constraint enforced:
-  - spawn/await are NOT allowed inside if/while bodies (directly or nested).
-
-Analysis model (conservative / may-analysis):
-  - Each active (spawned-but-not-awaited) thread contributes a footprint:
-        Reads(thread), Writes(thread) + line sites (for reporting).
-  - A current-thread access conflicts with any active-thread access if:
-        current READ  vs other WRITE        => race candidate
-        current WRITE vs other READ/WRITE   => race candidate
-  - At spawn time, we also check thread-vs-thread overlap (two child threads
-    running concurrently), discovered when the second one is spawned.
-  - Function calls are treated as "their internal accesses may interleave"
-    with active threads: we check callee footprint sites against active threads.
-
-Notes / assumptions:
-  - Variables are treated as resources by name.
-  - Parameter substitution: if a callee accesses a formal parameter p, and the
-    actual argument is an expression containing variables, we map p to those
-    variables (conservative).
-  - No pointer/alias analysis; expect false positives.
-
-Usage:
-  python small_race_analyzer.py path/to/program.small
-
-Output:
-  - Prints race candidates with line numbers (both sides when available).
-
+SMALL Race Analyzer (modularized)
+This file is now a thin wrapper delegating to the modular race analysis package.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Set, Tuple
-import sys
-import argparse
 
-from lexer import lex, LexerError
-from abstract_syntax_tree import *
-from parser import Parser, ParserError
+from race_analysis.cli import analyze_source, main
+from race_analysis.conflicts import RaceWarning
+from race_analysis.formatting import format_warning
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 
 # -----------------------------------------------------------------------------
