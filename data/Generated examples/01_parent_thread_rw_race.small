@@ -1,0 +1,13 @@
+// Example 01: Parent ↔ thread conflict (RW/RW on a)
+function incrementA() {
+  a = a + 1;          // R(a), W(a)
+  return a;
+}
+
+function main() {
+  a = 0;              // W(a)
+  t = spawn incrementA();  // Thread: R/W(a)
+  a = a + 1;          // Parent: R/W(a)  => race expected
+  await t;
+  return a;
+}

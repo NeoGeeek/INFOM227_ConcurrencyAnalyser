@@ -1,0 +1,14 @@
+// Example 05: Handle reuse => first thread "lost" (never awaited)
+function writeA() { a = 1; return a; }
+function writeAAgain() { a = 2; return a; }
+
+function main() {
+  a = 0;
+
+  t = spawn writeA();       // t -> thread1 (W(a))
+  t = spawn writeAAgain();  // t overwritten -> thread1 may still run concurrently
+  await t;                  // joins thread2 only
+
+  a = a + 1;                // Parent R/W(a) => race expected if thread1 still active
+  return a;
+}

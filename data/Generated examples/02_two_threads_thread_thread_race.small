@@ -1,0 +1,19 @@
+// Example 02: Two threads conflict with each other (W vs R on a)
+function writeA() {
+  a = 1;              // W(a)
+  return a;
+}
+
+function readA() {
+  b = a + 0;          // R(a), W(b)
+  return b;
+}
+
+function main() {
+  a = 0;
+  t1 = spawn writeA();     // W(a)
+  t2 = spawn readA();      // R(a)
+  await t1;
+  await t2;
+  return 0;
+}
