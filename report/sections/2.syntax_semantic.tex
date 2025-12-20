@@ -1,0 +1,243 @@
+\section{Syntaxe et sémantique du langage Small}
+
+Cette section présente la syntaxe et la sémantique du langage \textit{Small},
+incluant une extension minimale pour la gestion de la concurrence.
+
+\subsection{Syntaxe}
+
+La syntaxe du langage Small est définie par la grammaire suivante :
+
+\subsubsection{Syntaxe des expressions Small}
+\begin{center}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{rcl}
+        expr & ::= & arithExpr \textbar{} boolExpr \\
+
+        arithExpr & ::= & noprnd \textbar{} binOp \\
+
+        boolExpr & ::= & boprnd \textbar{} relOp \\
+
+        binOp & ::= & noprnd op noprnd \\
+
+        relOp & ::= & boprnd rop boprnd \\
+
+        noprnd & ::= & var \textbar{} num \\
+
+        boprnd & ::= & var \textbar{} \texttt{'True'} \textbar{} \texttt{'False'} \\
+
+        op & ::= & \texttt{'+'} \textbar{} \texttt{'-'} \textbar{} \texttt{'*'} \textbar{} \texttt{'/'} \\
+
+        rop & ::= & \texttt{'<'} \textbar{} \texttt{'>'} \textbar{} \texttt{'=='} \textbar{} \texttt{'!='} \textbar{}
+        \texttt{'>='} \textbar{} \texttt{'<='} \textbar{} and \textbar{} or \\
+
+        var & ::= & identifier\\
+
+        num & ::= & digit\textsuperscript{+}\\
+
+        identifier & ::= & letter (letter \textbar{} digit)\textsuperscript{*}\\
+
+        letter & ::= & \texttt{'a'} \textbar{} \texttt{'b'} \textbar{} \texttt{'c'} \textbar{}
+        \ldots \textbar{} \texttt{'z'} \textbar{} \texttt{'A'} \textbar{} \texttt{'B'} \textbar{} \texttt{'C'} \textbar{}
+        \ldots \textbar{} \texttt{'Z'}\\
+
+        digit & ::= & \texttt{'0'} \textbar{} \texttt{'1'} \textbar{} \texttt{'2'} \textbar{}
+        \texttt{'3'} \textbar{} \texttt{'4'} \textbar{} \texttt{'5'} \textbar{} \texttt{'6'} \textbar{} \texttt{'7'} \textbar{}
+        \texttt{'8'} \textbar{} \texttt{'9'}
+    \end{tabular}
+\end{center}
+
+\subsubsection{Syntaxe de l'extension de la concurrence Small}
+\begin{center}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{rcl}
+        spawnStmt & ::= & \texttt{'spawn'} function\\
+
+        awaitStmt & ::= & \texttt{'await' '('} identifier \texttt{')'}\\
+
+    \end{tabular}
+\end{center}
+
+\subsubsection{Syntaxe des déclaration Small}
+\begin{center}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{rcl}
+        stmtList & ::= & stmt\textsuperscript{*}\\
+
+        stmt & ::= & assign \textbar{} if \textbar{} while \textbar{} sequence \textbar{} spawnStmt \textbar{} awaitStmt \textbar{} returnStmt \texttt{';'} \\
+
+        assign & ::= & identifier \texttt{'='} expr \textbar{} identifier \texttt{'='} funcCall \\
+
+        funcCall & ::= & identifier \texttt{'('}[exprList]\texttt{')'} \\
+
+        exprList & ::= & expr\textsuperscript{*} \\
+
+        if & ::= & \texttt{'if' '('} expr \texttt{')'} stmt  \texttt{'else'} stmt\\
+
+        while & ::= & \texttt{'if' '('} expr \texttt{')'} stmt\\
+
+        sequence & ::= & \texttt{'\{' } stmtList \texttt{'\}'} \\
+
+        returnStmt & ::= & \texttt{'return'} expr \\
+    \end{tabular}
+\end{center}
+
+\subsubsection{Syntaxe de la stucture d'un programme Small}
+\begin{center}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{rcl}
+        program & ::= & function\textsuperscript{*}\\
+
+        function & ::= & \texttt{'function'} identifier \texttt{'('}[paramList]\texttt{')'}  \texttt{'\{' } stmtList \texttt{'\}'}\\
+
+        paramList & ::= & param  \textbar{} param \texttt{','} paramList \\
+
+        param & ::= & identifier \\
+    \end{tabular}
+\end{center}
+
+\subsection{Sémantique}
+
+Small utilise une sémantique opérationnelle, via des règles d'inférence.\\
+
+\medskip
+
+\subsubsection{Sémantique d'un programme Small}
+
+L’environnement liant les variables à leurs valeurs est défini comme suit :
+\[
+    \sigma : \text{Var} \rightarrow \mathbb{Z} \cup \{\text{True}, \text{False}\}
+\]
+
+\medskip
+
+L’état global du programme (pile d'environnement) :
+\[
+    (e, \sigma) \Rightarrow v
+\]
+
+\subsubsection{Sémantique des expressions Small}
+
+\begin{mathpar}
+    \infer[\textsc{True}]
+    {}
+    {(True, \sigma) \Rightarrow True}
+
+    \infer[\textsc{False}]
+    {}
+    {(False, \sigma) \Rightarrow False}
+
+
+    \infer[\textsc{Int}]
+    {v \in \mathbb{Z}}
+    {(v, \sigma) \Rightarrow v}
+
+    \infer[\textsc{Var}]
+    {x \in \text{Var}}
+    {(x, \sigma) \Rightarrow \sigma(x)}
+
+    \infer[\textsc{Op}]
+    {
+        (x_1, \sigma) \Rightarrow v_1 \\
+    (x_2, \sigma) \Rightarrow v_2 \\
+    v = v_1 \oplus v_2
+    }
+    {(x_1 \oplus x_2, \sigma) \Rightarrow v}
+
+\end{mathpar}
+
+\subsubsection{Sémantique des instruction Small}
+
+\begin{mathpar}
+    \infer[\textsc{Simple assignment}]
+    {(e,\sigma) \Rightarrow v}
+    {(x = e,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma[x \mapsto v]}
+
+    \infer[\textsc{Sequence}]
+    {
+        (s_1,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma' \quad
+    (s_2,\Sigma \bullet \sigma') \Rightarrow \Sigma \bullet \sigma''
+    }
+    {(s_1; s_2,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma''}
+
+    \infer[\textsc{If-True}]
+    {
+        (e,\sigma) \Rightarrow True \quad
+    (s_1,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'
+    }
+    {(\text{if }(e)\ s_1\ \text{else}\ s_2,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'}
+
+    \infer[\textsc{If-False}]
+    {
+        (e,\sigma) \Rightarrow False \quad
+    (s_2,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'
+    }
+    {(\text{if }(e)\ s_1\ \text{else}\ s_2,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'}
+
+    \infer[\textsc{While-True}]
+    {
+        (e,\sigma) \Rightarrow True \quad
+    (s;\ \text{while }(e)\ s,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'
+    }
+    {(\text{while }(e)\ s,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma'}
+
+    \infer[\textsc{While-False}]
+    {(e,\sigma) \Rightarrow False}
+    {(\text{while }(e)\ s,\Sigma \bullet \sigma) \Rightarrow \Sigma \bullet \sigma}
+
+    \infer[\textsc{Return}]
+    {(e,\sigma) \Rightarrow v}
+    {(\text{return } e,\Sigma \bullet \sigma) \Rightarrow (v, \Sigma)}
+
+    \infer[\textsc{Function Call}]
+    {
+        (e, \sigma) \Rightarrow a
+    \quad
+    \sigma_n = \{ x \mapsto a \}
+        \quad
+        (B, \Sigma \bullet \sigma \bullet \sigma_n)
+        \Rightarrow
+        (v, \Sigma \bullet \sigma)
+    }
+    {
+        (y = f(e), \Sigma \bullet \sigma)
+        \Rightarrow
+        \Sigma \bullet \sigma[y \mapsto v]
+    }
+
+\end{mathpar}
+
+
+\subsubsection{Sémantique de l'extension de la concurrence Small}
+
+Dans cette extension, nous introduisons la notion de threads.
+Pour cela, nous ajoutons un ensemble de tâches actives \(T\) et notons par \(\tau\) une tâche spécifique (son environnement et son état).
+
+\paragraph{Spawn} Évalue l’argument, crée un nouvel environnement local, ajoute la fonction à l’ensemble \(T\), et continue immédiatement.
+
+\paragraph{Await} Suspend la tâche courante jusqu’à ce que la tâche \(\tau\) se termine.
+
+\begin{mathpar}
+    \infer[\textsc{Spawn}]
+    {
+        (\text{spawn } f(e), T, \Sigma \bullet \sigma)
+        \Rightarrow
+        (T \cup \{\sigma_n\}, \Sigma \bullet \sigma)
+    }
+    {
+        (e, \sigma) \Rightarrow a
+    \quad
+    \sigma_n = \{ x \mapsto a \}
+        \quad
+        \text{function } f(x) \{ B \}
+    }
+
+    \infer[\textsc{Await}]
+    {
+        (y = \text{await } \tau, T, \Sigma \bullet \sigma)
+        \Rightarrow
+        (T', \Sigma \bullet \sigma[y \mapsto v])
+    }
+    {
+        (\tau, T) \Rightarrow (v, T')
+    }
+\end{mathpar}
