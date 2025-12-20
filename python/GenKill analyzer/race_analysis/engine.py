@@ -10,14 +10,18 @@ from conflicts import RaceWarning, mode_for, check_access, check_thread_thread
 
 
 # -----------------------------------------------------------------------------
-# Escaping threads (optional conservative modeling)
+# Gestion conservatrice des threads "échappés"
 # -----------------------------------------------------------------------------
 
 def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[str, List[ThreadInfo]]:
     """
-    If a function spawns a handle that is never awaited in the same function
-    (syntactically, under the project constraint), we treat it as an 'escaped'
-    thread that may still run after the call returns.
+    Identifie les threads "échappés" d'une fonction, c'est-à-dire ceux qui
+    sont spawnés mais jamais awaités dans la fonction. On les traite comme
+    des threads qui continuent à s'exécuter après le retour de la fonction.
+
+    :param prog: programme analysé
+    :param effects: effets calculés pour chaque fonction
+    :return: dictionnaire fonction -> liste de ThreadInfo représentant les threads échappés
     """
     esc: Dict[str, List[ThreadInfo]] = {}
     for fname, fdef in prog.functions.items():
@@ -26,11 +30,10 @@ def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[
 
         threads: List[ThreadInfo] = []
         for s in spawns:
-            if s.handle is None:
-                continue
-            if s.handle in awaited:
+            if s.handle is None or s.handle in awaited:
                 continue
 
+            # calcul de l'effet du thread spawné
             if isinstance(s.target, SpawnCall):
                 callee_def = prog.functions[s.target.func]
                 thr = substitute_effect(effects[s.target.func], callee_def, s.target.args)
@@ -47,7 +50,7 @@ def compute_escaping_threads(prog: Program, effects: Dict[str, Effect]) -> Dict[
 
 
 # -----------------------------------------------------------------------------
-# Core analyzer
+# Analyseur central (statement)
 # -----------------------------------------------------------------------------
 
 def analyze_stmt(
@@ -59,11 +62,25 @@ def analyze_stmt(
     state: ConcurState,
     warnings: Set[RaceWarning],
 ) -> ConcurState:
+    """
+    Analyse un statement et met à jour l'état concurrent et la liste des warnings.
+
+    :param stmt: statement à analyser
+    :param prog: programme complet
+    :param effects: effets calculés pour chaque fonction
+    :param escapes: threads échappés
+    :param current_func: fonction contenant le statement
+    :param state: état courant des threads
+    :param warnings: ensemble des avertissements détectés
+    :return: nouvel état concurrent mis à jour
+    """
 
     def add_all(ws: List[RaceWarning]) -> None:
+        """Ajoute tous les warnings donnés à l'ensemble global."""
         for w in ws:
             warnings.add(w)
 
+    # Assignements simples
     if isinstance(stmt, Assign):
         if stmt.target in state.handle_env:
             state.handle_env[stmt.target] = set()
@@ -77,6 +94,7 @@ def analyze_stmt(
 
         return state
 
+    # Assignments via appel de fonction
     if isinstance(stmt, AssignCall):
         if stmt.target in state.handle_env:
             state.handle_env[stmt.target] = set()
@@ -99,7 +117,7 @@ def analyze_stmt(
 
         add_all(check_access(state, stmt.target, "W", stmt.line, f"{current_func.name}:W(ret) at line {stmt.line}"))
 
-        # propagate escaped threads (approx)
+        # propagation conservatrice des threads échappés
         for t in escapes.get(stmt.func, []):
             base = Effect(
                 reads=set(t.reads),
@@ -113,6 +131,7 @@ def analyze_stmt(
 
         return state
 
+    # Appel de fonction sans assignation
     if isinstance(stmt, CallStmt):
         arg_reads: Set[str] = set()
         for a in stmt.args:
@@ -143,13 +162,14 @@ def analyze_stmt(
 
         return state
 
+    # Spawn de thread
     if isinstance(stmt, Spawn):
         if stmt.handle is not None:
             if stmt.handle in state.handle_env:
                 state.handle_env[stmt.handle] = set()
             add_all(check_access(state, stmt.handle, "W", stmt.line, f"{current_func.name}:W(handle) at spawn line {stmt.line}"))
 
-        # parent argument evaluation
+        # évaluation des arguments du spawn
         if isinstance(stmt.target, SpawnCall):
             arg_reads: Set[str] = set()
             for a in stmt.target.args:
@@ -180,12 +200,12 @@ def analyze_stmt(
         if stmt.handle is not None:
             state.handle_env.setdefault(stmt.handle, set()).add(tid)
         else:
-            # allow await <functionName> for "spawn f(...);" form
             if isinstance(stmt.target, SpawnCall):
                 state.handle_env.setdefault(stmt.target.func, set()).add(tid)
 
         return state
 
+    # Await d'un handle
     if isinstance(stmt, Await):
         tids = state.handle_env.get(stmt.handle, set())
         for tid in list(tids):
@@ -193,17 +213,20 @@ def analyze_stmt(
         state.handle_env[stmt.handle] = set()
         return state
 
+    # Return
     if isinstance(stmt, Return):
         reads = vars_in_expr(stmt.expr)
         for var in sorted(reads):
             add_all(check_access(state, var, "R", stmt.line, f"{current_func.name}:R(return) at line {stmt.line}"))
         return state
 
+    # Séquence de statements
     if isinstance(stmt, Seq):
         for s in stmt.stmts:
             state = analyze_stmt(s, prog, effects, escapes, current_func, state, warnings)
         return state
 
+    # If / While
     if isinstance(stmt, If):
         for var in sorted(vars_in_expr(stmt.cond)):
             add_all(check_access(state, var, "R", stmt.line, f"{current_func.name}:R(if-cond) at line {stmt.line}"))
@@ -221,15 +244,23 @@ def analyze_stmt(
 
 
 # -----------------------------------------------------------------------------
-# Orchestration helper: analyze a parsed Program
+# Analyse complète d'un programme
 # -----------------------------------------------------------------------------
 
 def analyze_program(prog: Program) -> List[RaceWarning]:
-    # enforce project constraint
+    """
+    Analyse un programme entier pour détecter les data races statiques.
+
+    :param prog: programme déjà parsé
+    :return: liste triée de RaceWarning
+    """
+    # imposer la contrainte : pas de spawn/await dans if/while
     for f in prog.functions.values():
         enforce_no_spawn_await_in_if_while(f.body, inside_control=False)
 
+    # calcul des effets pour chaque fonction
     effects = compute_function_effects(prog)
+    # identification des threads "échappés"
     escapes = compute_escaping_threads(prog, effects)
 
     warnings: Set[RaceWarning] = set()
