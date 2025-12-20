@@ -1,0 +1,16 @@
+// Example 04: spawn { ... } block with multiple R/W sites
+function main() {
+  a = 0;
+  b = 0;
+
+  t = spawn {
+    a = a + 1;        // R/W(a)
+    b = a + 0;        // R(a), W(b)
+    a = b + 0;        // R(b), W(a)
+    return a;
+  };
+
+  b = b + 1;          // Parent R/W(b) => race expected vs thread
+  await t;
+  return b;
+}

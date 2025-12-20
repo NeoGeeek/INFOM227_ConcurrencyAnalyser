@@ -1,0 +1,12 @@
+// Example 11 (INVALID): spawn inside if (should be rejected by project constraint)
+function f() { a = a + 1; return a; }
+
+function main() {
+  cond = 1;
+  if (cond == 1) {
+    t = spawn f();     // INVALID: spawn inside if
+  } else {
+    x = 0;
+  }
+  return 0;
+}

@@ -1,0 +1,13 @@
+// Example 07: Await before parent accesses => should be SAFE under this model
+function writeA() {
+  a = 10;        // Thread W(a)
+  return a;
+}
+
+function main() {
+  a = 0;
+  t = spawn writeA();
+  await t;       // synchronization
+  a = a + 1;     // after await: no race expected
+  return a;
+}

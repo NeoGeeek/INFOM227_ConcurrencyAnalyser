@@ -1,0 +1,17 @@
+// Example 06: Escaped thread via interprocedural spawn not awaited in callee
+function worker() {
+  a = a + 1;      // Thread: R/W(a)
+  return a;
+}
+
+function launcher() {
+  t = spawn worker();  // spawned but never awaited inside launcher
+  return 0;
+}
+
+function main() {
+  a = 0;
+  launcher();          // escaped worker may still run
+  a = a + 1;           // Parent R/W(a) => race expected vs worker
+  return a;
+}

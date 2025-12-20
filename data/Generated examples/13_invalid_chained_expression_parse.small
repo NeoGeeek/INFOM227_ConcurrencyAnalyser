@@ -1,0 +1,8 @@
+// Example 13 (INVALID): chained expression if parser only supports one binary operator
+function main() {
+  a = 1;
+  b = 2;
+  c = 3;
+  x = a + b + c;      // INVALID for a "binary-only" expression grammar
+  return x;
+}
