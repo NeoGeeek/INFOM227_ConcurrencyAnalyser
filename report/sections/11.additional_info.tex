@@ -2,5 +2,16 @@
 
 \subsection{Détail de l'analyseur}
 
-Notre analyseur détermine un résumé d'un analyse GEN/KILL à partir d'un bloc de code.
-Nous ne faisons pas de KILL car on ne fait que des jonctions.
+Lors de la création de notre analyseur, nous avons fait plusieurs choix simplifiant notre analyse.
+Ces changements nous ont ainsi permis de faciliter l'implémentation d'une analyse statique de code au sein de notre analyseur.
+
+Premièrement, nous avons fait le choix de retirer le KILL du GEN/KILL, qui n'avait d'effet qu'en cas d'un \texttt{await}.
+Cela nous a permis de grandement simplifier le concept d'effet d'une fonction ou d'un \texttt{spawn}, tout en l'élargissant à l'ensemble des lignes de code du programme.
+Il était donc possible, avec cette simplification, de faire en sorte que notre analyse revienne à une jonction de type \textit{least upper bound} entre les effets des lignes de code.
+
+Ensuite, nous avons fait le choix de grouper les lignes de code en blocs, délimités entre le début et la fin de vie d'un thread.
+Cela nous a permis de réduire la détection de \textit{race conditions} à une simple comparaison entre deux effets de blocs.
+
+Enfin, bien que l'analyse implémentée soit une version simplifiée de celle décrite plus haut, elle en garde tout de même les principales propriétés.
+En effet, elle reste une analyse \textit{forward} et \textit{flow-sensitive} de type \textit{may}, tout en gardant la sur-approximation des cas problématiques.
+Ainsi, bien que moins précise que l'originale, cette implémentation reste \textit{sound}.
