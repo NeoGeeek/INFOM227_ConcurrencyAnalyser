@@ -19,9 +19,116 @@ function main() {
 
 \subsection{Analyse pas à pas}
 
+L'analyse démarre à partir de la fonction \texttt{main} et suit le control-flow du programme.
 
+Les effets sont modélisés sous la forme d'un couple d'ensembles représentant les accès en lecture et en écriture.: (\textit{\{Read\}}, \textit{\{Write\}})
+
+Les indices $t_n$ représentent les différents threads de l'exécution.
+$t_1$ représente le thread principal, tandis que $t_2$ représente le thread créé par l'instruction \texttt{spawn}.
+
+\begin{longtable}{c c c c c}
+    \toprule
+    \textbf{Ligne} & \textbf{In} & \textbf{Gen} & \textbf{Kill} & \textbf{Out} \\
+    \midrule
+    \endfirsthead
+
+    \toprule
+    \textbf{Ligne} & \textbf{In} & \textbf{Gen} & \textbf{Kill} & \textbf{Out} \\
+    \midrule
+    \endhead
+
+    5 (\texttt{main})
+    &
+    &
+    &
+    &  \\
+
+    \midrule
+
+    6
+    & $(\varnothing,\varnothing)$
+    & $(\varnothing,\{a_{t_1}\})$
+    & $(\varnothing,\varnothing)$
+    & $(\varnothing,\{a_{t_1}\})$\\
+
+    \midrule
+    7 (\texttt{spawn})
+    &
+    &
+    &
+    &  \\
+
+    \midrule
+    1 (\texttt{increment})
+    & $(\varnothing,\varnothing)$
+    & $(\varnothing,\varnothing)$
+    & $(\varnothing,\varnothing)$
+    & $(\varnothing,\varnothing)$ \\
+
+    \midrule
+    2
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_2}\},\{a_{t_2}\})$
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_2}\},\{a_{t_2}\})$ \\
+
+    \midrule
+    3
+    & $(\{a_{t_2}\},\{a_{t_2}\})$
+    & $(\{a_{t_2}\},\varnothing)$
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_2}\},\{a_{t_2}\})$ \\
+
+    \midrule
+    Effet \texttt{spawn} 7
+    & $(\{a_{t_2}\},\{a_{t_2}\})$
+    &
+    &
+    & $(\{a_{t_2}\},\{a_{t_2}\})$ \\
+
+    \midrule
+    7
+    & $(\varnothing, \{a_{t_1}\})$
+    & $(\{a_{t_2}\},\{a_{t_2}, t_{t_1}\})$
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_2}\},\{a_{t_1}, a_{t_2}, t_{t_1}\})$ \\
+
+    \midrule
+    8
+    & $(\{a_{t_2}\},\{a_{t_1}, a_{t_2}, t_{t_1}\})$
+    & $(\{a_{t_1}\},\{a_{t_1}\})$
+    & $(\varnothing,\varnothing)$
+    & \makecell[l]{
+        $(\{a_{t_1}, a_{t_2}\},\{a_{t_1}, a_{t_2}, t_{t_1}\})$ \\
+        \textbf{Flag :} variable \texttt{'a'}
+    } \\
+
+    \midrule
+    9
+    & $(\{a_{t_1}, a_{t_2}\},\{a_{t_1}, a_{t_2}, t_{t_1}\})$
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_2}\},\{a_{t_2}\})$
+    & $(\{a_{t_1}\},\{a_{t_1}, t_{t_1}\})$ \\
+
+    \midrule
+    10
+    & $(\{a_{t_1}\},\{a_{t_1}, t_{t_1}\})$
+    & $(\{a_{t_1}\},\varnothing)$
+    & $(\varnothing,\varnothing)$
+    & $(\{a_{t_1}\},\{a_{t_1}, t_{t_1}\})$ \\
+
+    \bottomrule
+\end{longtable}
+
+L'effet de l'instruction \texttt{spawn} à la ligne 7 est calculé en analysant la fonction \texttt{increment} dans un thread séparé ($t_2$).
 
 \subsection{Résultats de l'analyse faite manuellement}
+
+Pour notre analyse détaillée ci-dessus, nous avons détecté une race condition.
+
+La variable \texttt{a} est accédée en écriture à la fois dans le thread principal ($t_1$ à la ligne 8) et dans le thread ($t_2$ à ligne 2 de la fonction \texttt{increment}).
+
+C'est donc pour ça, que nous envoyons un flag (avertissement) à la ligne 8 dans le tableau ci-dessus.
 
 \subsection{Résultats de l'analyse faite par l'outil}
 \begin{lstlisting}[style=SmallLang]
