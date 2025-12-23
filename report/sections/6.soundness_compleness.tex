@@ -50,7 +50,10 @@ main() {
 
 \end{tikzpicture}
 
-Dans ce simple exemple, on prouve la \textit{soundness} de notre analyse car aucun accès dangereux est ignoré.
+Dans ce simple exemple, nous illustrons la \textit{soundness} de notre analyse en montrant qu’aucun accès dangereux est ignoré.
+Par ailleurs, notre analyse étant une analyse \textit{may}, celle-ci va donc dans le sens de la sur-approximation des comportements possibles du programme.
+Notre analyse part donc du principe que nous nous trouvons dans le pire cas possible, ce qui la force à considérer tous les cas problématiques.
+Ainsi, les choix de conception de notre analyse garantissent que toute situation dangereuse réelle est détectée, ce qui en fait une analyse \textit{sound}.
 
 \subsection{\textit{Completeness}}
 
