@@ -1,1 +1,26 @@
 \section{Procédure d'exécution de l'outil d'analyse}
+
+Pour exécuter notre outil d'analyse statique, suivez les étapes ci-dessous :
+\begin{enumerate}
+    \item \textbf{Pré-requis :} Assurez-vous d'avoir Python 3 installé sur votre machine. Vous pouvez vérifier cela en exécutant la commande suivante dans votre terminal :
+    \begin{lstlisting}[style=SmallLang]
+        python --version
+    \end{lstlisting}
+
+    \item \textbf{Lancement de l'outil :} Assurez-vous d'être dans le répertoire racine du projet.
+    Exécutez la commande suivante pour lancer l'outil d'analyse en fournissant le chemin vers le fichier Small à analyser :
+    \begin{lstlisting}[style=SmallLang]
+        python tool/cli.py <chemin_vers_fichier_small>
+    \end{lstlisting}
+    Remplacez \texttt{<chemin\_vers\_fichier\_small>} par le chemin réel du fichier Small que vous souhaitez analyser.
+    Vous pourrez également utiliser les fichiers d'exemple situés dans le répertoire \texttt{data/}.
+
+    \item \textbf{Interprétation des résultats :} Après l'exécution de l'outil, les résultats de l'analyse seront affichés dans le terminal.
+    Si des accès concurrents problématiques sont détectés, ils seront listés avec des détails tels que la variable concernée, les lignes de code impliquées, et le type d'accès (lecture ou écriture).
+
+    \item \textbf{Exemple de lancement :} Voici un exemple de commande pour analyser un fichier nommé \texttt{GenKill\_example.small} situé dans le répertoire \texttt{data/} :
+    \begin{lstlisting}[style=SmallLang]
+        python tool/cli.py data/GenKill_example.small
+    \end{lstlisting}
+
+\end{enumerate}
