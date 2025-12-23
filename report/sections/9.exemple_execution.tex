@@ -3,10 +3,10 @@
 Dans cette section, nous présentons un exemple d'exécution de notre analyse statique sur un programme simple utilisant des threads.
 
 \subsection{Programme d'exemple}
-
 \begin{lstlisting}[style=SmallLang]
 function increment(a) {
-    a = a + 1; return a;
+    a = a + 1;
+    return a;
 }
 
 function main() {
@@ -23,3 +23,12 @@ function main() {
 \subsection{Résultats de l'analyse faite manuellement}
 
 \subsection{Résultats de l'analyse faite par l'outil}
+\begin{lstlisting}[style=SmallLang]
+1 race candidate(s) found:
+
+[RACE] var='a' @ line 8 (RW vs T)
+A: main:RW at line 8
+B: lines {2} in spawn increment(...) in main (spawn line 7)
+\end{lstlisting}
+
+
