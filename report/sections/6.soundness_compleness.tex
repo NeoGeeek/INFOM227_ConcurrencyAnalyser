@@ -10,18 +10,14 @@ Voici un exemple simple pour illustrer ce concept :
 
 \begin{lstlisting}[style=SmallLang]
 int a;
-
 function increment() {
     a = a + 1;
 }
-
 main() {
-    a = 3;                // ligne 1
-    t = spawn {           // ligne 2
-        increment();      // ligne 3
-    }
-    a = a + 1;            // ligne 4
-    await t;              // ligne 5
+    a = 3;
+    t = spawn { increment(); }
+    a = a + 1;
+    await t;
 }
 \end{lstlisting}
 
@@ -31,10 +27,10 @@ main() {
     thread/.style={dashed, draw, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center}
 ]
 
-    \node[state] (line1) {Line 1: a = 3 \\ \textbf{Write}};
-    \node[state, below=of line1] (line2) {Line 2: t = spawn\{increment()\} \\ \textbf{Write (spawn thread)}};
-    \node[state, below=of line2] (line4) {Line 4: a = a + 1 \\ \textbf{Used (Read+Write)}};
-    \node[state, below=of line4] (line5) {Line 5: await t \\ \textbf{Used}};
+    \node[state] (line1) {Line 6: a = 3 \\ \textbf{Write}};
+    \node[state, below=of line1] (line2) {Line 7: t = spawn\{increment()\} \\ \textbf{Write (spawn thread)}};
+    \node[state, below=of line2] (line4) {Line 8: a = a + 1 \\ \textbf{Used (Read+Write)}};
+    \node[state, below=of line4] (line5) {Line 9: await t \\ \textbf{Used}};
 
     \node[thread, right=4cm of line2] (spawn) {Spawn thread: increment() \\ Line 3: a = a + 1 \\ \textbf{Write}};
 
@@ -63,9 +59,7 @@ Dans notre cas, cela signifierait que si notre analyse ne signale pas d'accès p
 \begin{lstlisting}[style=SmallLang]
 main() {
     a = 0;
-    t = spawn {
-        b = 1;
-    }
+    t = spawn { b = 1; }
     c = a + 1;
     await t;
 }
@@ -77,10 +71,10 @@ main() {
     thread/.style={dashed, draw, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center}
 ]
 
-    \node[state] (line1) {Line 1: a = 0 \\ \textbf{Write}};
-    \node[state, below=of line1] (line2) {Line 2: t = spawn\{b = 1\} \\ \textbf{Write (spawn thread)}};
-    \node[state, below=of line2] (line3) {Line 3: c = a + 1 \\ \textbf{Used (Read+Write)}};
-    \node[state, below=of line3] (line4) {Line 4: await t \\ \textbf{Used}};
+    \node[state] (line1) {Line 2: a = 0 \\ \textbf{Write}};
+    \node[state, below=of line1] (line2) {Line 3: t = spawn\{b = 1\} \\ \textbf{Write (spawn thread)}};
+    \node[state, below=of line2] (line3) {Line 4: c = a + 1 \\ \textbf{Used (Read+Write)}};
+    \node[state, below=of line3] (line4) {Line 5: await t \\ \textbf{Used}};
 
     \node[thread, right=4cm of line2] (spawn) {Spawn thread: b = 1 \\ \textbf{Write}};
 
