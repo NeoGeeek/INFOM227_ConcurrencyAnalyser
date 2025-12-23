@@ -4,6 +4,20 @@ Dans cette section, nous présentons un exemple d'exécution de notre analyse st
 
 \subsection{Programme d'exemple}
 
+\begin{lstlisting}[style=SmallLang]
+function increment(a) {
+    a = a + 1; return a;
+}
+
+function main() {
+    a = 3;
+    t = spawn increment(a);
+    a = a + 1;
+    await t;
+    return a;
+}
+\end{lstlisting}
+
 \subsection{Analyse pas à pas}
 
 \subsection{Résultats de l'analyse faite manuellement}
