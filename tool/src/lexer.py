@@ -8,7 +8,7 @@ import re
 KEYWORDS = {
     "function", "if", "else", "while", "return", # Mots-clés de contrôle/structure
     "spawn", "await",                            # Mots-clés liés à la concurrence/asynchronisme
-    "True", "False",                             # Booléens
+    "True", "False", "and", "or",                # Booléens et opérateurs logiques
 }
 
 # Expression régulière principale pour identifier les différents types de tokens
