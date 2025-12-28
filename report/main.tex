@@ -109,4 +109,13 @@
     \include{sections/9.exemple_execution}
     \include{sections/10.procedure_execution}
     \include{sections/11.additional_info}
+
+    \clearpage
+    \nocite{*} % affiche toutes les entrées du .bib ; enlever si seules les citations doivent apparaître
+    \phantomsection
+    \addcontentsline{toc}{section}{Bibliographie}
+    \renewcommand{\refname}{Bibliographie}
+    \bibliographystyle{plain}
+    \bibliography{biblio}
+
 \end{document}
