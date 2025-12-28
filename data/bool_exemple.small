@@ -2,7 +2,7 @@ function demo() {
     x = 0;
     y = True;
 
-    if (True * y) {
+    if (True and y) {
         x = x + 1;
     } else {
         x = x + 2;

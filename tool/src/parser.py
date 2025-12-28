@@ -223,7 +223,7 @@ class Parser:
         t = self.peek()
 
         # Si il y a un opérateur binaire ou logique
-        if t.kind == "OP":
+        if t.kind == "OP" or (t.kind == "KW" and t.value in ("and", "or")):
             op = self.consume(t.kind).value
             right = self.parse_operand()
             if op in ("+", "-", "*", "/"):

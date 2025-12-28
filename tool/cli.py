@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sys
 import argparse
+import time
 
 from src.lexer import lex, LexerError
 from src.parser import Parser, ParserError
@@ -32,6 +33,8 @@ def main() -> int:
       2 = races détectées
     """
 
+    start = int(time.time()*1000)
+
     # Création du parser de ligne de commande
     ap = argparse.ArgumentParser(description="Static race detector for SMALL + spawn/await.")
     ap.add_argument("file", help="Path to a .small source file")
@@ -44,6 +47,8 @@ def main() -> int:
 
         # Analyse statique pour détecter les races
         warnings = analyze_source(src)
+        end = int(time.time()*1000)
+        print("The analysis took", (end - start), "ms.")
 
         # Aucun avertissement : code 0
         if not warnings:
@@ -65,5 +70,9 @@ def main() -> int:
 
 # Point d'entrée du script
 if __name__ == "__main__":
+    start = time.time()
     import sys
     sys.exit(main())
+    end = time.time()
+    length = end - start
+    print("It took", length, "seconds!")
