@@ -2,16 +2,16 @@
 
 \subsection{Domaine abstrait des valeurs}
 
-Notre domaine abstrait des valeur se compose de cinq éléments :
+Notre domaine abstrait des valeurs se compose de cinq éléments :
 \begin{center}
     \texttt{\{Used (Top), Read+Write, Read, Write, Free (Bottom)\}}.
 \end{center}
 
 
-Ces cinqs éléments représentent les différents états d'une variable pour un accès concurrent. Nous avons fait le choix d'utiliser une cinquième état, \texttt{Read+Write}, pour permettre plus de précision dans notre outil d'analyse.
+Ces cinq éléments représentent les différents états d'une variable pour un accès concurrent. Nous avons fait le choix d'utiliser un cinquième état, \texttt{Read+Write}, pour permettre plus de précision dans notre outil d'analyse.
 
-L'élement Top est \texttt{Used}, qui indique qu'accéder à cette variable est potentiellement problèmatique. Cela signifie qu'il y a au moins un accès en écriture concurrent à cette variable.\\
-L'élément Bottom est \texttt{Free}, qui indique qu'il n'y a aucun d'accès concurrent à cette variable.\\
+L'élément Top est \texttt{Used}, qui indique qu'accéder à cette variable est potentiellement problématique. Cela signifie qu'il y a au moins un accès en écriture concurrent à cette variable.\\
+L'élément Bottom est \texttt{Free}, qui indique qu'il n'y a aucun accès concurrent à cette variable.\\
 L'élément \texttt{Read} indique qu'il y a au moins un accès en lecture concurrent à cette variable, mais aucun accès en écriture.\\
 L'élément \texttt{Write} indique qu'il y a au moins un accès en écriture concurrent à cette variable, mais aucun accès en lecture.\\
 L'élément \texttt{Read+Write} indique qu'il y a au moins un accès en lecture et un accès en écriture concurrent à cette variable.
@@ -25,6 +25,6 @@ L'élément \texttt{Read+Write} indique qu'il y a au moins un accès en lecture 
 \end{figure}
 
 Vous trouvez ci-dessus la figure de notre lattice représentant notre domaine abstrait des valeurs.
-Nous avons choisi cette structure car cela permet d'avoir une hiérarchie. Cette hierarchie nous permet d'avoir des accès uniquement en écriture ou uniquement en lecture.
-Lors qu'un accès en lecture et un accès en écriture sont détectés, nous pouvons remonter dans le lattice jusqu'à l'élément \texttt{Read+Write}, qui est plus précis que l'élément Top, \texttt{Used}.
+Nous avons choisi cette structure car cela permet d'avoir une hiérarchie. Cette hiérarchie nous permet d'avoir des accès uniquement en écriture ou uniquement en lecture.
+Lorsqu'un accès en lecture et un accès en écriture sont détectés, nous pouvons remonter dans le lattice jusqu'à l'élément \texttt{Read+Write}, qui est plus précis que l'élément Top, \texttt{Used}.
 L'élément Top est atteint uniquement lorsque deux accès en écriture sont détectés concurremment, ce qui est le cas le plus problématique.

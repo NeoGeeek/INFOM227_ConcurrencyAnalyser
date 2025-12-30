@@ -6,7 +6,7 @@ L'analyse statique que nous avons implémentée est \textit{sound} mais pas \tex
 
 Une analyse est considérée comme \textit{sound} si elle sur-approxime les comportements possibles du programme.
 Dans notre cas, cela signifie que si notre analyse signale un accès problématique à une variable, alors il existe un scénario d'exécution dans lequel cet accès \textbf{peut} se produire.
-Voici un exemple simple pour illustrer ce concept :
+L’exemple suivant illustre ce concept :
 
 \begin{lstlisting}[style=SmallLang]
 int a;
@@ -46,7 +46,7 @@ main() {
 
 \end{tikzpicture}
 
-Dans ce simple exemple, nous illustrons la \textit{soundness} de notre analyse en montrant qu’aucun accès dangereux est ignoré.
+Dans cet exemple, nous illustrons la \textit{soundness} de notre analyse en montrant qu’aucun accès dangereux n'est ignoré.
 Par ailleurs, notre analyse étant une analyse \textit{may}, celle-ci va donc dans le sens de la sur-approximation des comportements possibles du programme.
 Notre analyse part donc du principe que nous nous trouvons dans le pire cas possible, ce qui la force à considérer tous les cas problématiques.
 Ainsi, les choix de conception de notre analyse garantissent que toute situation dangereuse réelle est détectée, ce qui en fait une analyse \textit{sound}.
@@ -90,20 +90,20 @@ main() {
 
 \end{tikzpicture}
 
-Dans ce simple exemple, notre analyse signale un accès problématique à la variable \texttt{a} dans le thread parent, car elle est lue après avoir été écrite. Cependant, comme le thread enfant n'accède pas à \texttt{a}, il n'y a pas de conflit réel. Ainsi, notre analyse génère un faux positif, ce qui prouve qu'elle n'est pas \textit{complete}.
+Dans cet exemple, notre analyse signale un accès problématique à la variable \texttt{a} dans le thread parent, car elle est lue après avoir été écrite. Cependant, comme le thread enfant n'accède pas à \texttt{a}, il n'y a pas de conflit réel. Ainsi, notre analyse génère un faux positif, ce qui prouve qu'elle n'est pas \textit{complete}.
 
 \subsection{\textit{Local Soundness}}
 
 
 Une analyse est localement \textit{sound} si, pour chaque instruction individuelle, l'état concret possible après l’instruction est représenté dans l’approximation abstraite produite par l’analyse.
 Pour prouver que notre analyse est localement \textit{sound}, nous prendrons une instruction d'assignation: \texttt{x = e}.
-Cette instruction simple mais nécéssaire, car elle génère à la fois un accès en écriture à la variable \texttt{x} et des accès en lecture aux variables utilisées dans l'expression \texttt{e}.
+Cette instruction simple mais nécessaire, car elle génère à la fois un accès en écriture à la variable \texttt{x} et des accès en lecture aux variables utilisées dans l'expression \texttt{e}.
 
 \subsubsection{Preuve}
 
 Soit l'état concret \texttt{S}.
 
-\paragraph{Cas 1 : Aucun accès concurrent avec écriture n'est pas possible}
+\paragraph{Cas 1 : Aucun accès concurrent avec écriture n’est possible}
 L’exécution concrète de l’instruction produit uniquement des lectures et/ou écritures dans un même thread.
 
 L’abstraction de l’état résultant est alors \texttt{Read}, \texttt{Write} ou \texttt{Read+Write}.

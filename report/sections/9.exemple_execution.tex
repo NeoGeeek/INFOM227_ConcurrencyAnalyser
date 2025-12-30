@@ -126,9 +126,9 @@ L'effet de l'instruction \texttt{spawn} à la ligne 7 est calculé en analysant 
 
 Pour notre analyse détaillée ci-dessus, nous avons détecté une race condition.
 
-La variable \texttt{a} est accédée en écriture à la fois dans le thread principal ($t_1$ à la ligne 8) et dans le thread ($t_2$ à ligne 2 de la fonction \texttt{increment}).
+La variable \texttt{a} est accédée en écriture à la fois dans le thread principal ($t_1$ à la ligne 8) et dans le thread ($t_2$ à la ligne 2 de la fonction \texttt{increment}).
 
-C'est donc pour ça, que nous envoyons un flag (avertissement) à la ligne 8 dans le tableau ci-dessus.
+Par conséquent, nous envoyons donc un flag (avertissement) à la ligne 8 dans le tableau ci-dessus.
 
 \subsection{Résultats de l'analyse faite par l'outil}
 \begin{lstlisting}[style=SmallLang]
